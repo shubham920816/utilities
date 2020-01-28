@@ -51,7 +51,5 @@ class loggerfunc(object):
         return (logger_test)
 
 if __name__ == "__main__":
-    t1 = loggerfunc()
-    t2 = t1.logger()
-    print(t2)
+    pass
 
