@@ -26,9 +26,6 @@ class kuberinteraction(object):
             run_date:Running date for particular instance
             configpath:Config path containing the acces keys for a a particular cluster
         '''
-        self.filelayer = FileLayer()
-        self.filelayer.download_blob(configpath.lstrip("/"),container=container)
-
         configpath = configpath
 
         config.load_kube_config(configpath)
@@ -43,6 +40,7 @@ class kuberinteraction(object):
     def kube_delete_empty_pods(self, namespace='default', phase='Succeded'):
         '''
         This function deletes the pods according to the status of  pods inside kuberenetes cluster
+        
         Args:
             namespace:K8s namespace
             phase: State of the pod
@@ -65,10 +63,8 @@ class kuberinteraction(object):
             self.logger.error("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
 
         for pod in pods.items:
-            print("#########################################################################")
             self.logger.debug(pod)
             podname = pod.metadata.name
-            #        print("pdname",podname)
             try:
                 if pod.status.reason == "NodeLost":
                     api_response_pod = api_pods.delete_namespaced_pod(podname, namespace, body=deleteoptions)
@@ -120,12 +116,12 @@ class kuberinteraction(object):
 
     def kube_wait_for_job(self, name="", namespace='default'):
         '''
-        This function pools the status of the job
+        This function pools the status of the job till it completes.
+        
         Args:
             name: name of the job
             namespace: namespace in k8s
 
-        Returns:
 
         '''
         time.sleep(30)
@@ -155,6 +151,7 @@ class kuberinteraction(object):
     def kube_launch_job(self, yamlpath=""):
         '''
         This function launches the job inside K8s cluster
+        
         Args:
             yamlpath: Yaml path for the job
 
