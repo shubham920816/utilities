@@ -115,7 +115,7 @@ class FileLayer(object):
 
         destinationfileservice=BlockBlobService(account_name=destination_source_account_name,
                                                 account_key=destination_source_account_key)
-        local_path=self.download_blob(sourceblobpath,container=sourcecontainer)
+        local_path=self.download_blob(blobpath=sourceblobpath,container=sourcecontainer)
 
         if len(destinationblobpath) == 0:
             destinationblobpath = "/".join(local_path.split("/")[1:])
