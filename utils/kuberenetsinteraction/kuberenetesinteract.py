@@ -16,16 +16,18 @@ from pprint import pprint
 
 class kuberinteraction(object):
 
+    """
+    This class provides method to interact with kuberenetes cluster objects like pods,jobs,secrets etc.
+    """
+
     def __init__(self,run_date="",configpath="/data/shubham/kubernetesclusterconfiguration/config.ini"):
-        '''
-        This function performs authentication with kuberentes cluster,
-        deletes completed pods,launches k8s jobs,deletes k8s jobs,
-        create secret key on k8s for remote container registories
-        
+        """
+        This function initiliazes logger object and creates authentication object for
+        k8s cluster.
         Args:
-            run_date:Running date for particular instance
+            run_date:Running date for this method (used for logging purpose)
             configpath:Config path containing the acces keys for a a particular cluster
-        '''
+        """
         configpath = configpath
 
         config.load_kube_config(configpath)
@@ -155,8 +157,6 @@ class kuberinteraction(object):
         Args:
             yamlpath: Yaml path for the job
 
-        Returns:
-
         '''
    
         f = open(yamlpath)
@@ -166,10 +166,20 @@ class kuberinteraction(object):
             api_response = self.api_instance.create_namespaced_job("default", body=dep, pretty=True)
         except ApiException as e:
             self.logger.exception("Exception when calling BatchV1Api->create_namespaced_job: %s\n" % str(e))
-        return
+
 
     def kube_secret_auth(self, registery="", server="", username="", password="", email="", name="",
                          namespace="default"):
+        """
+        This method creates secret on k8s cluster for remote image pull.
+        Args:
+            registery:secret name we want to k8s cluster
+            server:Url for the docker server
+            username:username for the docker server
+            password:password for the docker server
+            email:email
+            name:indentifier name for the user
+        """
         kind = "Secret"
         data = {'docker.registry': registery,
                 'docker.server': server,

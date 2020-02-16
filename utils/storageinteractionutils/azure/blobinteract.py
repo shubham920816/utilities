@@ -17,7 +17,8 @@ class FileLayer(object):
         """
         Downloads file in the Azure Blob to current local directory
         Args:
-            path_on_blob: path to the file on blob
+            blobpath: blob name oz azure
+            local_file_path:File path on local system
             container: Azure Blob Container name
 
         Returns: Downloaded local file path
@@ -34,33 +35,34 @@ class FileLayer(object):
         print("downloaded to = {}".format(local_path))
         return local_path
 
-    def upload_to_blob(self, local_file_path="",bloppath="", container="testing-environment"):
+    def upload_to_blob(self, local_file_path="",blobpath="", container="testing-environment"):
         
         """
         Uploads local file to the blob
         Args:
-            local_file_path:
+            blobpath: blob name oz azure
+            local_file_path:File path on local system
             container: Azure Blob Container name
 
-        Returns:
+        Returns: Blob name on azure
 
         """
         if len(bloppath)==0:
               blob_file = "/".join(local_file_path.split("/")[1:])
         else:
-            blob_file=bloppath
+            blob_file=blobpath
         self.file_service.create_blob_from_path(container_name=container, blob_name=blob_file,
                                                 file_path=local_file_path)
         return blob_file
 
     def read_pickle(self, path_on_blob, container="testing-environment"):
         """
-
+        Method reads serialized object stored in azure containers
         Args:
             path_on_blob: pickle file Path on the blob
             container: Azure Blob Container name
 
-        Returns:
+        Returns:Serialized object
 
         """
         model_obj = pickle.loads(self.file_service.get_blob_to_bytes(container_name="testing-environment",
@@ -99,6 +101,14 @@ class FileLayer(object):
 
 
     def copy_blob_same_storage(self,sourceblobpath="",destinationblobpath="",sourcecontainer="",destinationcontainer=""):
+            """
+            This method copies blob across containers in same storage account.
+            Args:
+               sourceblobpath:source blob name
+               destinationblobpath:destionation blob name
+               sourcecontainer:source container name
+               destinationcontainer:destination container
+            """
 
             if len(destinationblobpath)==0:
                 destinationblobpath=sourceblobpath
@@ -108,10 +118,22 @@ class FileLayer(object):
 
             self.file_service.copy_blob(destinationcontainer,destinationblobpath,source_blob_url)
 
-    def copy_blob_across_storage(self, sourceblobpath="", destinationblobpath="",
+    def copy_blob_across_storage(self,sourceblobpath="", destinationblobpath="",
                                                                   sourcecontainer="", destinationcontainer="",
                                                                  destination_source_account_name="",
                                                                  destination_source_account_key=""):
+        """
+        This method copies blob across different storage accounts.
+
+        Args:
+            sourceblobpath:source blob name
+            destinationblobpath:destionation blob name
+            sourcecontainer:source container name
+            destinationcontainer:destination container
+            destination_source_account_name: storage account name for destination storage account
+            destination_source_account_key:storage account key for destination storage account
+
+        """
 
         destinationfileservice=BlockBlobService(account_name=destination_source_account_name,
                                                 account_key=destination_source_account_key)
