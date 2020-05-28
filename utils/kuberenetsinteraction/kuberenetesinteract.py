@@ -9,32 +9,39 @@ import datetime
 from kubernetes import client, config, utils
 import kubernetes.client
 from kubernetes.client.rest import ApiException
-from utils.loggerutil.loggerutil import loggerfunc
+from commonutils.logger.loggerutil import loggerfunc
+from commonutils.storage.azure.files import FileLayer
 from pprint import pprint
-
+#try:
+# container=os.environ["azurecontainer"]
+#except Exception as e:
+#    container="testing-environment"
 
 
 class kuberinteraction(object):
 
-    """
-    This class provides method to interact with kuberenetes cluster objects like pods,jobs,secrets etc.
-    """
-
-    def __init__(self,run_date="",configpath="/data/shubham/kubernetesclusterconfiguration/config.ini"):
-        """
-        This function initiliazes logger object and creates authentication object for
-        k8s cluster.
+    def __init__(self,req_id="",run_id="",run_date="",configpath="/mnt/consumerhub/config/kubernetes/config.ini",container="",storage_account_name="consumerhubstorage",storage_account_access_key="eu6nLBATI0sSav+IA+2+KlchYUpZTEof8WOujXNfAxjMstmIYf9Lx/9ibmQQyt/+UiED14oESEw4UL4rlLtx6g=="):
+        '''
+        This function performs authentication with kuberentes cluster
+        and creates kubernetes_yamls reference object
         Args:
-            run_date:Running date for this method (used for logging purpose)
+            req_id:Request id for the run
+            run_id:Run_id for a particular run
+            run_date:Running date for particular instance
             configpath:Config path containing the acces keys for a a particular cluster
-        """
-        configpath = configpath
+        '''
+        #self.filelayer = FileLayer(storage_account_access_key=storage_account_access_key,storage_account_name=storage_account_name)
+        #configpath=self.filelayer.download_blob(configpath.lstrip("/"),container=container)
+
+        #configpath = configpath
 
         config.load_kube_config(configpath)
         configuration = kubernetes.client.Configuration()
-       
+        #self.api_instance = kubernetes_yamls.client.BatchV1Api(kubernetes_yamls.client.ApiClient(configuration))
+        #t1 = loggerfunc(req_id=req_id, run_id=run_id, run_date=run_date, servicename="kubernetesinteraction")
+        #self.logger = t1.logger()
         self.api_instance = kubernetes.client.BatchV1Api(kubernetes.client.ApiClient(configuration))
-        t1 = loggerfunc(run_date=run_date)
+        t1 = loggerfunc(req_id=req_id, run_id=run_id, run_date=run_date, servicename="kubernetesinteraction")
         self.logger = t1.logger()
 
 
@@ -42,7 +49,6 @@ class kuberinteraction(object):
     def kube_delete_empty_pods(self, namespace='default', phase='Succeded'):
         '''
         This function deletes the pods according to the status of  pods inside kuberenetes cluster
-        
         Args:
             namespace:K8s namespace
             phase: State of the pod
@@ -65,8 +71,10 @@ class kuberinteraction(object):
             self.logger.error("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
 
         for pod in pods.items:
+            print("#########################################################################")
             self.logger.debug(pod)
             podname = pod.metadata.name
+            #        print("pdname",podname)
             try:
                 if pod.status.reason == "NodeLost":
                     api_response_pod = api_pods.delete_namespaced_pod(podname, namespace, body=deleteoptions)
@@ -92,14 +100,10 @@ class kuberinteraction(object):
 
         '''
         self.logger.info("deleting the job %s" % name)
-        time.sleep(30)
+        time.sleep(2)
 
 
         try:
-            api_response_cleanup = self.api_instance.read_namespaced_job_status(name, namespace)
-            if api_response_cleanup:
-                self.logger.info("trying to delete the completed job %s" % name)
-                try:
 
                     api_response_del = self.api_instance.delete_namespaced_job(name,
                                                                                namespace,
@@ -107,26 +111,22 @@ class kuberinteraction(object):
                                                                                propagation_policy='Background')
                     self.logger.debug(api_response_del)
                     self.logger.info("%s deleted successfully" % name)
-                except ApiException as e:
-                    # pass
-                    self.logger.exception("error ocurred while deleting the job")
         except ApiException as e:
-            #pass
-            self.logger.info("Job named %s doesnot exists in the namespace %s"%(name,namespace))
-            self.logger.exception("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % str(e))
+                    self.logger.exception("error ocurred while deleting the job")
+
 
 
     def kube_wait_for_job(self, name="", namespace='default'):
         '''
-        This function pools the status of the job till it completes.
-        
+        This function pools the status of the job
         Args:
             name: name of the job
             namespace: namespace in k8s
 
+        Returns:
 
         '''
-        time.sleep(30)
+        time.sleep(2)
         try:
             api_response_wait = self.api_instance.read_namespaced_job_status(name, namespace)
             self.logger.info("api_response_wait %s" % api_response_wait.status)
@@ -134,7 +134,7 @@ class kuberinteraction(object):
             self.logger.info("job status is %s" % jobstatus)
             while (jobstatus != 1):
 
-                time.sleep(30)
+                time.sleep(2)
                 self.logger.info("slept for 30 seconds")
                 self.logger.info("checking job status")
                 try:
@@ -150,36 +150,80 @@ class kuberinteraction(object):
         except ApiException as e:
             self.logger.exception("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % str(e))
 
-    def kube_launch_job(self, yamlpath=""):
+    def kube_launch_job(self, yamlpath="",namespace="default"):
         '''
         This function launches the job inside K8s cluster
-        
         Args:
             yamlpath: Yaml path for the job
 
+        Returns:
+
         '''
-   
+        #  config.load_kube_config(self.configpath)
+        # configuration = kubernetes_yamls.client.Configuration()
+        # api_instance = kubernetes_yamls.client.BatchV1Api(kubernetes_yamls.client.ApiClient(configuration))
         f = open(yamlpath)
         dep = yaml.safe_load(f)
-        time.sleep(30)
+        time.sleep(2)
         try:
-            api_response = self.api_instance.create_namespaced_job("default", body=dep, pretty=True)
+            api_response = self.api_instance.create_namespaced_job(namespace, body=dep, pretty=True)
         except ApiException as e:
+            #pass
             self.logger.exception("Exception when calling BatchV1Api->create_namespaced_job: %s\n" % str(e))
+
+    def kube_launch_cron_job(self,yamlpath="",namespace="default"):
+        '''
+                This function launches the cron job inside K8s cluster
+                Args:
+                    yamlpath: Yaml path for the job
+
+                Returns:
+
+        '''
+
+        f = open(yamlpath)
+        dep = yaml.safe_load(f)
+        time.sleep(2)
+        api_instance=client.BatchV1beta1Api()
+        try:
+            api_response =api_instance.create_namespaced_cron_job(namespace, body=dep, pretty=True)
+        except ApiException as e:
+            # pass
+            self.logger.exception("Exception when calling BatchV1Api->create_namespaced_job: %s\n" % str(e))
+            raise Exception("Error occured while launching the cron job")
+
+    def delete_cronjob(self,namespace="default",jobname=""):
+
+        api_instance = client.BatchV1beta1Api()
+        try:
+            api_response = api_instance.delete_namespaced_cron_job(jobname,namespace,pretty=True)
+        except ApiException as e:
+            # pass
+            self.logger.exception("Exception when calling BatchV1Api->create_namespaced_job: %s\n" % str(e))
+            raise Exception("Error occured while launching the cron job")
+
+
+
+
+    def configmap_values(self,namespace='default',configmap_name=""):
+
+        api_instance=client.CoreV1Api()
+
+        try:
+            api_response = api_instance.list_namespaced_config_map(namespace, pretty=True)
+            for i in api_response.items:
+                if i.metadata.name==configmap_name:
+                    metadata=i.data
+                    break
+            return(metadata)
+
+        except ApiException as e:
+            print("Exception when calling CoreV1Api->list_namespaced_config_map: %s\n" % e)
+
 
 
     def kube_secret_auth(self, registery="", server="", username="", password="", email="", name="",
                          namespace="default"):
-        """
-        This method creates secret on k8s cluster for remote image pull.
-        Args:
-            registery:secret name we want to k8s cluster
-            server:Url for the docker server
-            username:username for the docker server
-            password:password for the docker server
-            email:email
-            name:indentifier name for the user
-        """
         kind = "Secret"
         data = {'docker.registry': registery,
                 'docker.server': server,
@@ -198,8 +242,10 @@ class kuberinteraction(object):
             self.logger.exception("Exception when calling CoreV1Api->create_namespaced_secret: %s\n" % str(e))
 
 
-
-
 if __name__ == "__main__":
     pass
-
+    # t1=kuberinteraction("/data/shubham.mishra2/AKSLaunch/data-enginerring/PODLAUNCH/configdata/kubernetesconfig.ini")
+    # t1.kube_launch_job("synthesio.yaml")
+    # t1.kube_wait_for_job("synthesio",namespace='default')
+    # t1.kube_cleanup_finished_jobs("synthesio")
+# t1.kube_delete_empty_pods()
