@@ -6,6 +6,7 @@ import pickle
 class FileLayer(object):
 
     def __init__(self, **kwargs):
+
         self.storage_account_name = kwargs.get('storage_account_name', '<storage account name>')
         self.storage_account_access_key = kwargs.get('storage_account_access_key',
                                                      '<storage account acess key>')

@@ -2,12 +2,12 @@ from setuptools import setup, find_packages,find_namespace_packages
 
 setup(
     name='utils',
-    version='0.0.1',
+    version='0.0.2',
     url='',
     packages=find_namespace_packages(),
 
 
-    install_requires=["azure-storage-blob==1.5.0","kubernetes","urllib3==1.24.2"],
+    install_requires=["azure-storage-blob==1.5.0","kubernetes","requests"],
     license='',
     author='shubham mishra',
     author_email='shubhammishra920816@gmail.com',

@@ -1,21 +1,29 @@
 import logging
 import datetime
 import os
-import time
 import sys
-from commonutils.storage.azure.files import FileLayer
-import multiprocessing
+
 
 class loggerfunc(object):
+    """
+    This class intiates logger and return logger object
+    """
 
-    def __init__(self,level="INFO",req_id="",run_id="",run_date="",servicename="",servicelog=False,absolutepath="/mnt/consumerhub"):
+    def __init__(self,level="INFO",run_date="",servicename="",absolutepath="/mnt/consumerhub"):
+        """
+        Initiates logger class
+        :param level: Logging Level
+        :param run_date: Date folder for logging
+        :param servicename: Log file name
+        :param absolutepath: Absolute path for dumping the Logs
+        """
 
         self.level = level
-        self.run_id=run_id
-        self.req_id=req_id
-        self.run_date=run_date
+        if run_date:
+          self.run_date=run_date
+        else:
+            self.run_date=datetime.date.today().isoformat()
         self.absolutepath=absolutepath
-        self.servicelog=servicelog
         self.servicename=servicename
         self.loglevel=self.setlogginglevel()
 
@@ -23,6 +31,11 @@ class loggerfunc(object):
 
 
     def setlogginglevel(self):
+        """
+        Sets Logging Level
+        :return:
+        """
+
         logginglevel = str.upper(self.level)
         LEVELS = {'DEBUG': logging.DEBUG,
                   'INFO': logging.INFO,
@@ -34,64 +47,23 @@ class loggerfunc(object):
 
 
     def logger(self):
+        """
+        Returns logger object
+        :return:
+        """
         self.setlogginglevel()
 
-        logger_test = logging.getLogger(os.path.basename(sys.argv[0].split(".")[0]))
-        logger_test.setLevel(self.loglevel)
+        logger_obj = logging.getLogger(os.path.basename(sys.argv[0].split(".")[0]))
+        logger_obj.setLevel(self.loglevel)
 
-        foldername="%s/logs/%s/%s/%s/%s/"%(self.absolutepath,self.servicename,self.req_id,self.run_id,self.run_date)
+        foldername="%s/logs/%s/%s/"%(self.absolutepath,self.servicename,self.run_date)
         os.system("mkdir -p %s"%foldername)
-
-        if self.servicelog:
-          ch=logging.TimedRotatingFileHandler(path=foldername,
-                                 when="D",
-                                 interval=4,
-                                 backupCount=5)
-
-        else:
-          ch = logging.FileHandler("%s/%s.log"%(foldername,self.servicename), mode='a')
-
         ch.setLevel(self.loglevel)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s')
-        # formatter = logging.Formatter(
-        #     '%(asctime)s  - %(levelname)s -%(filename)s:%(lineno)d - %(funcName)s - %(message)s')
+        ch = logging.Filendler("%s/%s.log"%(foldername,self.servicename), mode='a')
         ch.setFormatter(formatter)
-        logger_test.addHandler(ch)
-        return (logger_test)
-
-    def logextract(self,t1,rootdir):
-
-        for subdir, dirs, files in os.walk(rootdir):
-            for file in files:
-                filename=os.path.join(subdir, file)
-                if (("log" in file) and ("success"  not  in file) and (len(file.split("log")[1]) > 0)):
-                    try:
-                     t1.upload_to_blob(filename,container="consumerhubdev")
-                     os.rename(filename,filename+".success")
-                    except Exception as e:
-                        pass
-
-    def log_poll(self):
-        pushflag=servicelog
-        t1 = FileLayer()
-        rootdir = self.absolutepath + "/logs/"
-        while pushflag:
-            self.logextract(t1,rootdir)
-
-
-    def logpush(self):
-        print("inside log push module")
-        process= multiprocessing.Process(target=self.log_poll,
-                                             args=(self.servicelog,))
-        process.start()
-        #while True:
-        #   time.sleep(1)
-        #   if not multiprocessing.active_children():
-        #       break
-        #for i in range(20):
-        #    print("value",i)
-
-
+        logger_obj.addHandler(ch)
+        return (logger_obj)
 
 if __name__ == "__main__":
     t1 = loggerfunc()
