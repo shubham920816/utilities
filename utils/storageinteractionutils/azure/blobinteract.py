@@ -5,11 +5,10 @@ import pickle
 
 class FileLayer(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self,storage_account_name="",storage_account_access_key=""):
 
-        self.storage_account_name = kwargs.get('storage_account_name', '<storage account name>')
-        self.storage_account_access_key = kwargs.get('storage_account_access_key',
-                                                     '<storage account acess key>')
+        self.storage_account_name = storage_account_name
+        self.storage_account_access_key = storage_account_access_key
         self.file_service = BlockBlobService(account_name=self.storage_account_name,
                                              account_key=self.storage_account_access_key)
 
@@ -70,7 +69,7 @@ class FileLayer(object):
                                                                      blob_name=path_on_blob).content)
         return model_obj
 
-    def read_config(self, path_on_blob, container="testing-environment"):
+    def read_config(self, path_on_blob="", container="testing-environment"):
         """
         Reads the json config file present on the blob
         Args:
@@ -83,7 +82,7 @@ class FileLayer(object):
         config_file = self.file_service.get_blob_to_text(container_name=container, blob_name=path_on_blob)
         return json.loads(config_file.content)
 
-    def list_folders_in_blob_path(self, blob_path, container="testing-environment"):
+    def list_folders_in_blob_path(self, blob_path="", container="testing-environment"):
         """
         Lists the Azure blob folder contents
         Args:
@@ -96,9 +95,6 @@ class FileLayer(object):
         list_generator = self.file_service.list_blobs(container_name=container, prefix=blob_path)
         folders_under_blob = list(set([pth.name for pth in list_generator]))
         return folders_under_blob
-
-    def upload_folder(self, local_folder_path, container="testing-environment"):
-        pass
 
 
     def copy_blob_same_storage(self,sourceblobpath="",destinationblobpath="",sourcecontainer="",destinationcontainer=""):
