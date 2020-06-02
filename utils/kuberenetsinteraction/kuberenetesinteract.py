@@ -21,7 +21,7 @@ class kuberinteraction(object):
             self.run_date=run_date
         else:
             self.run_date=datetime.date.today().isoformat()
-        self.logger=loggerfunc(servicename="kubernetes",run_date=run_date)
+        self.logger=loggerfunc(servicename="kubernetes",run_date=self.run_date)
         self.api_pods = client.CoreV1Api()
 
 

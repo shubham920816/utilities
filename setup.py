@@ -2,7 +2,7 @@ from setuptools import setup, find_packages,find_namespace_packages
 
 setup(
     name='utils',
-    version='0.0.2',
+    version='0.0.3',
     url='',
     packages=find_namespace_packages(),
 
